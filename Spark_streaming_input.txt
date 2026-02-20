@@ -1,0 +1,34 @@
+# Databricks notebook source
+dbutils.fs.mkdirs("/mnt/input-data/streams/csv_input/")
+dbutils.fs.mkdirs("/mnt/input-data/streams/csv_input/archive/")
+
+
+# COMMAND ----------
+
+import time, uuid
+from datetime import datetime, timezone
+import pandas as pd
+
+drop_zone = "/dbfs/mnt/input-data/streams/csv_input/"
+archive   = "/dbfs/mnt/input-data/streams/csv_input/archive/"
+
+i = 0
+while i < 10:   # generate 10 files then stop (for demo)
+    # timezone‑aware UTC now
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    df = pd.DataFrame({
+        "user_id":    [1, 2, 3],
+        "event_type": ["click", "view", "purchase"],
+        "value":      [round(100 * (0.5 + i*0.1), 2) for _ in range(3)],
+        "event_time": [now for _ in range(3)]
+    })
+    filename = f"events_{now}_{uuid.uuid4().hex[:6]}.csv"
+    path = drop_zone + filename
+    df.to_csv(path, index=False)
+    print(f"Wrote {filename}")
+
+    time.sleep(20)   # wait 20 seconds before next file
+    i += 1
+
+print("Done producing CSV files.")
